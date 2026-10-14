@@ -1,5 +1,6 @@
 import logging
 import sys
+from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -8,8 +9,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 LOGS_DIR = PROJECT_ROOT / "logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Standard continuous application log file (always the main active log)
-LOG_FILE_PATH = LOGS_DIR / "app.log"
+# Generate a unique log file name using the current timestamp
+current_time_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+LOG_FILE_PATH = LOGS_DIR / f"app_{current_time_str}.log"
 
 # Log formatting string
 LOG_FORMAT = "[%(asctime)s] %(levelname)s [%(filename)s:%(lineno)d] %(name)s - %(message)s"
@@ -36,10 +38,10 @@ logging.basicConfig(
 )
 
 # Export standard logger instance
-logger = logging.getLogger("my_project")
+logger = logging.getLogger("Tripmeta_AI")
 logger.setLevel(logging.INFO)
 
-# Attach file handler to uvicorn loggers so HTTP requests are also saved in app.log
+# Attach file handler to uvicorn loggers so HTTP requests are also saved in the log file
 for uvi_logger_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
     uvi_log = logging.getLogger(uvi_logger_name)
     uvi_log.setLevel(logging.INFO)

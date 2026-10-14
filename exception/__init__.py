@@ -1,6 +1,6 @@
 import sys
 from types import TracebackType
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 
 def error_message_detail(error: Exception | str, error_detail: Optional[Any] = None) -> str:
@@ -16,12 +16,21 @@ def error_message_detail(error: Exception | str, error_detail: Optional[Any] = N
     """
     exc_tb: Optional[TracebackType] = None
 
-    if error_detail is not None and hasattr(error_detail, "exc_info"):
-        _, _, exc_tb = error_detail.exc_info()
-    elif isinstance(error_detail, tuple) and len(error_detail) == 3:
-        _, _, exc_tb = error_detail
-    else:
-        _, _, exc_tb = sys.exc_info()
+    try:
+        if error_detail is not None:
+            # إذا تم تمرير وحدة sys
+            if hasattr(error_detail, "exc_info") and callable(error_detail.exc_info):
+                _, _, exc_tb = error_detail.exc_info()
+            # إذا تم تمرير tuple الخاصة بـ sys.exc_info()
+            elif isinstance(error_detail, tuple) and len(error_detail) == 3:
+                _, _, exc_tb = error_detail
+        
+        # إذا لم يتم العثور على traceback من error_detail، نحاول الحصول عليه من الحالة الحالية
+        if exc_tb is None:
+            _, _, exc_tb = sys.exc_info()
+
+    except Exception:
+        exc_tb = None
 
     if exc_tb is not None:
         file_name = exc_tb.tb_frame.f_code.co_filename
@@ -43,7 +52,7 @@ class CustomException(Exception):
 
     def __init__(self, error_message: Exception | str, error_detail: Optional[Any] = None):
         super().__init__(str(error_message))
-        self.error_message = error_message_detail(error_message, error_detail=error_detail or sys)
+        self.error_message = error_message_detail(error_message, error_detail=error_detail)
 
     def __str__(self) -> str:
         return self.error_message

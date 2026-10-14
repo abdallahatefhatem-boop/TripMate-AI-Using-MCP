@@ -2,40 +2,30 @@
 
 <div align="center">
 
-![TripMate AI Banner](https://img.shields.io/badge/TripMate-AI%20Planner-6366f1?style=for-the-badge&logo=fastapi&logoColor=white)
-[![Python 3.12](https://img.shields.io/badge/Python-3.12-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![LangGraph](https://img.shields.io/badge/Orchestrator-LangGraph-orange.svg?style=for-the-badge)](https://langchain-ai.github.io/langgraph/)
-[![Groq Qwen 27B](https://img.shields.io/badge/LLM-Groq%20Qwen%203.8%2027B-purple.svg?style=for-the-badge)](https://groq.com/)
-[![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-black.svg?style=for-the-badge)](https://github.com/astral-sh/ruff)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-
-**TripMate AI** is an enterprise-grade, agentic travel orchestration platform. It replaces the time-consuming process of manually browsing dozens of travel websites by uniting live flight telemetry, web-scraped hotel discovery, AI-driven itinerary synthesis, and thread-persistent state management into a single, cohesive workflow.
-
-</div>
-
 ---
 
 ## 📑 Table of Contents
 
-1. [🌟 Overview & Problem Statement](#-overview--problem-statement)
+1. [🌟 Overview &amp; Problem Statement](#-overview--problem-statement)
 2. [🧠 Multi-Agent Architecture (LangGraph Deep Dive)](#-multi-agent-architecture-langgraph-deep-dive)
 3. [🛠️ Tool Implementations Under the Hood](#️-tool-implementations-under-the-hood)
-4. [📐 Project Structure & Enterprise Design Patterns](#-project-structure--enterprise-design-patterns)
-5. [⚙️ Environment Configuration & API Keys](#️-environment-configuration--api-keys)
-6. [🚀 How to Run the Application & Web UI](#-how-to-run-the-application--web-ui)
+4. [📐 Project Structure &amp; Enterprise Design Patterns](#-project-structure--enterprise-design-patterns)
+5. [⚙️ Environment Configuration &amp; API Keys](#️-environment-configuration--api-keys)
+6. [🚀 How to Run the Application &amp; Web UI](#-how-to-run-the-application--web-ui)
    - [Method 1: Local Virtual Environment (Fastest)](#method-1-local-virtual-environment-fastest)
    - [Method 2: Using the Automation Makefile](#method-2-using-the-automation-makefile)
-   - [Method 3: Docker & Docker Compose (Full Stack)](#method-3-docker--docker-compose-full-stack)
+   - [Method 3: Docker &amp; Docker Compose (Full Stack)](#method-3-docker--docker-compose-full-stack)
 7. [🖥️ Interactive Web UI Walkthrough](#️-interactive-web-ui-walkthrough)
 8. [📡 REST API Documentation](#-rest-api-documentation)
-9. [🧪 Testing, Verification & Code Quality](#-testing-verification--code-quality)
-10. [🛡️ Logging & Exception Diagnostics](#️-logging--exception-diagnostics)
+9. [🧪 Testing, Verification &amp; Code Quality](#-testing-verification--code-quality)
+10. [🛡️ Logging &amp; Exception Diagnostics](#️-logging--exception-diagnostics)
 
 ---
 
 ## 🌟 Overview & Problem Statement
 
 Planning an international vacation typically involves:
+
 - Searching airline websites for live flight routes, baggage rules, terminal data, and schedules.
 - Reading reviews across booking engines to discover top-rated accommodations that match a budget.
 - Manually structuring daily sightseeing itineraries that balance travel time, activities, and rest.
@@ -50,12 +40,6 @@ Planning an international vacation typically involves:
 The system is constructed as a deterministic **StateGraph** state machine. Each node reads from the shared `TravelState`, performs its specialized task, and outputs state updates.
 
 <div align="center">
-
-![TripMate AI Graph Workflow](static/images/graph_workflow.png)
-
-*Figure: Compiled LangGraph State Machine Execution Flow (`START` -> `flight_agent` -> `hotel_agent` -> `itinerary_agent` -> `final_agent` -> `END`)*
-
-</div>
 
 ```mermaid
 flowchart TD
@@ -79,7 +63,9 @@ flowchart TD
 ```
 
 ### 1. State Definition (`TravelState`)
+
 Defined in [`backend/schema/schema.py`](file:///home/mg/my_venv/backend/schema/schema.py):
+
 ```python
 class TravelState(TypedDict):
     messages: Annotated[list[AnyMessage], operator.add]
@@ -91,7 +77,9 @@ class TravelState(TypedDict):
 ```
 
 ### 2. Graph Workflow Construction Code
+
 From [`agent/travel_graph.py`](file:///home/mg/my_venv/agent/travel_graph.py):
+
 ```python
 from langgraph.graph import StateGraph, START, END
 
@@ -117,14 +105,15 @@ travel_graph = workflow.compile(checkpointer=checkpointer)
 
 ### 3. Node Breakdown
 
-| Node Name | Handler Function | Role & Technology |
-| :--- | :--- | :--- |
-| **`flight_agent`** | `flight_agent(state)` | Parses the query, extracts origin and destination, resolves city/country names to 3-letter IATA codes (e.g. `DAC` -> `NRT`), and calls AviationStack. |
-| **`hotel_agent`** | `hotel_agent(state)` | Queries Tavily Search with destination keywords to extract real hotels, locations, ratings, and amenities. |
-| **`itinerary_agent`** | `itinerary_agent(state)` | Ingests the flight telemetry and hotel listings, then prompts Groq (`qwen/qwen3.8-27b`) to construct an optimized day-by-day plan. |
-| **`final_agent`** | `final_agent(state)` | Assembles the complete executive travel dossier with trip summary, flights, hotel recommendations, budget estimate, and tips. |
+| Node Name                     | Handler Function           | Role & Technology                                                                                                                                         |
+| :---------------------------- | :------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`flight_agent`**    | `flight_agent(state)`    | Parses the query, extracts origin and destination, resolves city/country names to 3-letter IATA codes (e.g. `DAC` -> `NRT`), and calls AviationStack. |
+| **`hotel_agent`**     | `hotel_agent(state)`     | Queries Tavily Search with destination keywords to extract real hotels, locations, ratings, and amenities.                                                |
+| **`itinerary_agent`** | `itinerary_agent(state)` | Ingests the flight telemetry and hotel listings, then prompts Groq (`qwen/qwen3.8-27b`) to construct an optimized day-by-day plan.                      |
+| **`final_agent`**     | `final_agent(state)`     | Assembles the complete executive travel dossier with trip summary, flights, hotel recommendations, budget estimate, and tips.                             |
 
 ### 4. Checkpointing & State Persistence
+
 - **PostgreSQL Checkpointer (`PostgresSaver`)**: If `DATABASE_URL` is set in your `.env` (e.g., Render, Supabase, Neon, or local Docker PostgreSQL), the graph automatically creates checkpoints for every execution thread (`thread_id`), allowing conversational resumption.
 - **Graceful Fallback (`InMemorySaver`)**: If a database is not configured or offline during development, the engine automatically falls back to in-memory checkpointing without crashing.
 
@@ -133,20 +122,25 @@ travel_graph = workflow.compile(checkpointer=checkpointer)
 ## 🛠️ Tool Implementations Under the Hood
 
 ### 1. Flight Tool ([`tools/flight_tool.py`](file:///home/mg/my_venv/tools/flight_tool.py))
+
 Resolving natural language locations into official IATA airport codes is accomplished via a 4-tier resolution pipeline:
+
 1. **Direct IATA Matching**: Recognizes explicit 3-letter uppercase codes (e.g., `"DAC"`, `"LHR"`, `"JFK"`).
 2. **Preferred City Hubs**: Maps major world capitals and travel hubs (e.g., `"dhaka"` -> `DAC`, `"tokyo"` -> `NRT`, `"london"` -> `LHR`, `"paris"` -> `CDG`).
 3. **Country ISO Resolution**: Resolves country aliases via `pycountry` and maps them to primary international gateways (`COUNTRY_MAIN_AIRPORT`).
 4. **Fuzzy Airport Database Scoring**: Searches `airportsdata` (7,800+ international airports), scoring candidates based on keyword matches (`"international"`, `"capital"`, city name matches).
 
 Once resolved, it queries the **AviationStack API** and formats:
+
 - Airline name and Flight number
 - Flight status (`scheduled`, `active`, `landed`)
 - Departure airport, terminal, gate, and delay in minutes
 - Arrival airport, terminal, gate, and scheduled arrival time
 
 ### 2. Hotel Tool ([`tools/tavily_tool.py`](file:///home/mg/my_venv/tools/tavily_tool.py))
+
 Connects to **Tavily AI Search**:
+
 - Executes real-time targeted queries for accommodations matching the user's specific destination and budget.
 - Filters and cleans snippets to prevent wall-of-text hallucination.
 - Returns formatted titles, URLs, and summaries for the top 5 accommodations.
@@ -235,19 +229,21 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tripmate
 ### Method 1: Local Virtual Environment (Fastest)
 
 1. **Activate the virtual environment**:
+
    ```bash
    source .venv/bin/activate
    ```
-
 2. **Launch the web server**:
+
    ```bash
    python main.py
    ```
+
    *Or with live-reload using uvicorn:*
+
    ```bash
    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
    ```
-
 3. **Open the Web UI**:
    Navigate to: 👉 **[http://localhost:8000](http://localhost:8000)**
 
@@ -305,25 +301,25 @@ The web dashboard is built with vanilla CSS and JavaScript for maximum performan
 
 1. **Natural Language Query Box**:
    Enter your vacation idea directly, for example:
+
    - *"Plan a 7 days Japan trip from Bangladesh including hotels and sightseeing under budget"*
    - *"5 days vacation in Dubai with luxury hotels from London"*
    - *"Budget 4 days trip to Paris from New York"*
    - Or click any of the **Quick Suggestion Chips** right below the input box.
-
 2. **Real-Time Animated Progress Stepper**:
    During execution, the UI displays an animated stepper that reflects the internal LangGraph state:
+
    - 🛫 *Scanning Live Flights (AviationStack)...*
    - 🏨 *Finding Top Hotels (Tavily)...*
    - 📅 *Synthesizing Daily Itinerary (Qwen 27B)...*
    - 📋 *Finalizing Travel Guide...*
-
 3. **Tabbed Output Dashboard**:
+
    - **✨ Comprehensive Plan**: The complete dossier rendered in GitHub-flavored markdown with day-by-day schedules, highlights, and cost breakdown.
    - **🛫 Live Flights**: Clean telemetry showing airline names, flight numbers, terminals, gates, and live delay status.
    - **🏨 Hotel Options**: Discovered hotels with links, descriptions, and amenities.
    - **📅 Day-by-Day**: Focused daily itinerary.
    - **⚙️ Agent Metadata**: Technical execution details (Thread ID, total LLM calls, model name, and graph orchestrator).
-
 4. **📋 Copy Plan**: Copies the full markdown output to your clipboard with one click.
 
 ---
@@ -336,10 +332,12 @@ FastAPI automatically generates interactive Swagger documentation available at:
 ### Key Endpoints
 
 #### 1. Web Dashboard
+
 - **Route**: `GET /`
 - **Description**: Returns the rendered HTML dashboard interface.
 
 #### 2. Health Check
+
 - **Route**: `GET /health`
 - **Response**:
   ```json
@@ -350,6 +348,7 @@ FastAPI automatically generates interactive Swagger documentation available at:
   ```
 
 #### 3. Generate Travel Plan
+
 - **Route**: `POST /api/plan`
 - **Headers**: `Content-Type: application/json`
 - **Request Payload**:
@@ -382,6 +381,7 @@ make test
 ```
 
 ### Test Suite Summary (10 Passing Tests)
+
 - `tests/test_api.py::test_home_page_endpoint`: Verifies HTML template rendering and 200 OK status.
 - `tests/test_api.py::test_health_check_endpoint`: Verifies service health probe.
 - `tests/test_config.py::test_configuration_manager_model_config`: Validates YAML model configuration parsing into `ModelConfig`.
@@ -399,15 +399,16 @@ make test
 
 1. **Dual Console & File Logging**:
    Every event across all tools and agents is logged to both `sys.stdout` and a timestamped file under `logs/` (e.g. `logs/10_15_2026_00_00_30.log`):
+
    ```
    [2026-10-15 00:00:32,149] INFO [flight_tool.py:37] my_project - Step 1: Loaded 7884 airports into memory successfully.
    [2026-10-15 00:00:32,661] INFO [flight_tool.py:494] my_project - Step 8: Route parsed: dep=DAC, arr=NRT
    [2026-10-15 00:00:36,086] INFO [travel_graph.py:86] my_project - [hotel_agent] Hotel search completed successfully.
    [2026-10-15 00:00:51,447] INFO [travel_graph.py:245] my_project - Graph execution complete with 4 calls.
    ```
-
 2. **Zero-Guesswork Exception Tracing**:
    Using `CustomException` from [`exception/__init__.py`](file:///home/mg/my_venv/exception/__init__.py), any runtime error automatically prints the file name and exact line number:
+
    ```
    Error occurred in script: [/home/mg/my_venv/agent/travel_graph.py] at line number: [141] error message: [...]
    ```
