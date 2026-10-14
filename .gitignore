@@ -28,5 +28,8 @@ env/
 .idea/
 
 # Custom logs & caches
+logs/
+*.log
 *.log.env
 .ipynb_checkpoints/
+
