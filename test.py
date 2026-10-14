@@ -7,5 +7,5 @@
 
 from tools.flight_tool import search_flights
 
-res=search_flights("plan a 7 days japan trip from Bangladesh")
+res = search_flights("plan a 7 days japan trip from Bangladesh")
 print(res)

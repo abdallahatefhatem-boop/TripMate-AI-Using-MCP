@@ -1,0 +1,6 @@
+model:
+  provider: "groq"
+  model_name: "qwen/qwen3.8-27b"
+  temperature: 0.5
+  max_tokens: 900
+  max_retries: 3

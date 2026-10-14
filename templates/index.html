@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TripMate AI - Intelligent Multi-Agent Travel Planner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="background-decorations">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-group">
+                <div class="logo-icon">✈️</div>
+                <div class="logo-text">
+                    <h1>TripMate <span class="gradient-text">AI</span></h1>
+                    <p class="subtitle">Multi-Agent Travel Planning & Live Booking Intelligence</p>
+                </div>
+            </div>
+            <div class="header-badges">
+                <span class="badge badge-purple">LangGraph</span>
+                <span class="badge badge-blue">Groq LLM</span>
+                <span class="badge badge-green">Live Flights</span>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <main class="main-content">
+            <!-- Query Panel -->
+            <section class="card input-card">
+                <div class="card-header">
+                    <h2><span class="icon">🌍</span> Where would you like to travel?</h2>
+                    <p class="helper-text">Enter your dream destination, budget, origin, or trip duration.</p>
+                </div>
+
+                <form id="plan-form" class="plan-form">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="user-query" 
+                            name="user_query" 
+                            rows="3" 
+                            placeholder="e.g. Plan a 7 days Japan trip from Bangladesh including hotels and sightseeing under budget..."
+                            required
+                        ></textarea>
+                    </div>
+
+                    <div class="example-chips">
+                        <span class="chip-label">Try asking:</span>
+                        <button type="button" class="chip" data-query="Plan a 7 days Japan trip from Bangladesh">🇯🇵 7 Days in Japan</button>
+                        <button type="button" class="chip" data-query="5 days vacation in Dubai with luxury hotels from London">🇦🇪 Dubai Luxury Trip</button>
+                        <button type="button" class="chip" data-query="Budget 4 days trip to Paris from New York">🇫🇷 Paris on a Budget</button>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" id="submit-btn" class="btn btn-primary">
+                            <span class="btn-text">Generate Trip Plan</span>
+                            <span class="btn-icon">✨</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Status Stepper -->
+                <div id="status-stepper" class="status-stepper hidden">
+                    <div class="step-indicator" id="step-flight">
+                        <div class="spinner-circle"></div>
+                        <span>Scanning Live Flights (AviationStack)...</span>
+                    </div>
+                    <div class="step-indicator" id="step-hotel">
+                        <div class="spinner-circle"></div>
+                        <span>Finding Top Hotels (Tavily)...</span>
+                    </div>
+                    <div class="step-indicator" id="step-itinerary">
+                        <div class="spinner-circle"></div>
+                        <span>Synthesizing Daily Itinerary (Llama 3.3)...</span>
+                    </div>
+                    <div class="step-indicator" id="step-final">
+                        <div class="spinner-circle"></div>
+                        <span>Finalizing Travel Guide...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Panel -->
+            <section id="results-section" class="card results-card hidden">
+                <div class="results-header">
+                    <div class="tab-navigation">
+                        <button class="tab-btn active" data-tab="tab-summary">✨ Comprehensive Plan</button>
+                        <button class="tab-btn" data-tab="tab-flights">🛫 Live Flights</button>
+                        <button class="tab-btn" data-tab="tab-hotels">🏨 Hotel Options</button>
+                        <button class="tab-btn" data-tab="tab-itinerary">📅 Day-by-Day</button>
+                        <button class="tab-btn" data-tab="tab-graph">🗺️ Graph Workflow</button>
+                        <button class="tab-btn" data-tab="tab-meta">⚙️ Agent Metadata</button>
+                    </div>
+                    <div class="result-actions">
+                        <button id="copy-btn" class="btn btn-outline btn-sm">📋 Copy Plan</button>
+                    </div>
+                </div>
+
+                <div class="tab-contents">
+                    <div id="tab-summary" class="tab-pane active markdown-body"></div>
+                    <div id="tab-flights" class="tab-pane markdown-body"></div>
+                    <div id="tab-hotels" class="tab-pane markdown-body"></div>
+                    <div id="tab-itinerary" class="tab-pane markdown-body"></div>
+                    <div id="tab-graph" class="tab-pane">
+                        <div class="graph-card">
+                            <h3 class="graph-title">LangGraph StateGraph Execution Pipeline</h3>
+                            <p class="helper-text">Sequential multi-agent workflow compiled in <code>agent/travel_graph.py</code>.</p>
+                            <div class="graph-image-container">
+                                <img src="/static/images/graph_workflow.png" alt="LangGraph Workflow Pipeline" class="graph-flow-img">
+                            </div>
+                            <div class="graph-steps-list">
+                                <div class="graph-step-item">
+                                    <span class="step-badge">Step 1</span>
+                                    <div><strong>flight_agent</strong>: Resolves origin/dest IATA codes & queries live flight telemetry.</div>
+                                </div>
+                                <div class="graph-step-item">
+                                    <span class="step-badge">Step 2</span>
+                                    <div><strong>hotel_agent</strong>: Scrapes premier accommodations & pricing via Tavily AI.</div>
+                                </div>
+                                <div class="graph-step-item">
+                                    <span class="step-badge">Step 3</span>
+                                    <div><strong>itinerary_agent</strong>: Synthesizes daily activity schedules with Qwen 27B.</div>
+                                </div>
+                                <div class="graph-step-item">
+                                    <span class="step-badge">Step 4</span>
+                                    <div><strong>final_agent</strong>: Assembles executive travel plan, budget breakdown, & tips.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="tab-meta" class="tab-pane">
+                        <div class="meta-grid">
+                            <div class="meta-box">
+                                <span class="meta-label">Thread ID</span>
+                                <span id="meta-thread-id" class="meta-value">-</span>
+                            </div>
+                            <div class="meta-box">
+                                <span class="meta-label">Agent Calls</span>
+                                <span id="meta-llm-calls" class="meta-value">-</span>
+                            </div>
+                            <div class="meta-box">
+                                <span class="meta-label">Model Engine</span>
+                                <span class="meta-value">qwen/qwen3.8-27b</span>
+                            </div>
+                            <div class="meta-box">
+                                <span class="meta-label">Orchestrator</span>
+                                <span class="meta-value">LangGraph StateGraph</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Powered by <strong>TripMate AI</strong> • Built with LangGraph, Groq, Tavily, AviationStack & FastAPI</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

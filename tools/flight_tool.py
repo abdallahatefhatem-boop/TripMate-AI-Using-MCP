@@ -1,8 +1,9 @@
 import os
 import re
 import sys
-import certifi
+
 import airportsdata
+import certifi
 import pycountry
 import requests
 from dotenv import load_dotenv
@@ -145,9 +146,24 @@ def clean_text(text: str) -> str:
         text = re.sub(r"[^a-z0-9\s]", " ", text)
         text = re.sub(r"\s+", " ", text)
         stop_words = [
-            "flight", "flights", "ticket", "tickets", "trip", "travel",
-            "plan", "complete", "days", "day", "including", "hotel",
-            "hotels", "sightseeing", "under", "budget", "info", "information",
+            "flight",
+            "flights",
+            "ticket",
+            "tickets",
+            "trip",
+            "travel",
+            "plan",
+            "complete",
+            "days",
+            "day",
+            "including",
+            "hotel",
+            "hotels",
+            "sightseeing",
+            "under",
+            "budget",
+            "info",
+            "information",
         ]
         words = [w for w in text.split() if w not in stop_words]
         cleaned = " ".join(words).strip()
@@ -170,12 +186,16 @@ def country_name_to_code(text: str):
 
         if cleaned_text in COUNTRY_ALIASES:
             code = COUNTRY_ALIASES[cleaned_text]
-            logger.info(f"Step 3: Found country code '{code}' in COUNTRY_ALIASES for '{cleaned_text}'")
+            logger.info(
+                f"Step 3: Found country code '{code}' in COUNTRY_ALIASES for '{cleaned_text}'"
+            )
             return code
 
         try:
             country = pycountry.countries.lookup(cleaned_text)
-            logger.info(f"Step 3: Found country code '{country.alpha_2}' via pycountry for '{cleaned_text}'")
+            logger.info(
+                f"Step 3: Found country code '{country.alpha_2}' via pycountry for '{cleaned_text}'"
+            )
             return country.alpha_2
         except LookupError:
             pass
@@ -184,7 +204,9 @@ def country_name_to_code(text: str):
         for country in pycountry.countries:
             country_name = country.name.lower()
             if country_name in cleaned_text:
-                logger.info(f"Step 3: Matched country name '{country.name}' -> code '{country.alpha_2}'")
+                logger.info(
+                    f"Step 3: Matched country name '{country.name}' -> code '{country.alpha_2}'"
+                )
                 return country.alpha_2
 
         for alias, code in COUNTRY_ALIASES.items():
@@ -223,7 +245,9 @@ def airport_country_matches(airport: dict, country_code: str) -> bool:
         return False
 
     except Exception as e:
-        logger.error(f"Step 4: Error checking country match for airport {airport} and country '{country_code}': {e}")
+        logger.error(
+            f"Step 4: Error checking country match for airport {airport} and country '{country_code}': {e}"
+        )
         raise CustomException(e, sys)
 
 
@@ -239,7 +263,9 @@ def get_best_airport_for_country(country_code: str):
         preferred = COUNTRY_MAIN_AIRPORT.get(country_code)
 
         if preferred and preferred in AIRPORTS:
-            logger.info(f"Step 5: Found preferred primary airport '{preferred}' for '{country_code}'")
+            logger.info(
+                f"Step 5: Found preferred primary airport '{preferred}' for '{country_code}'"
+            )
             return preferred
 
         candidates = []
@@ -264,12 +290,16 @@ def get_best_airport_for_country(country_code: str):
                 candidates.append((score, iata))
 
         if not candidates:
-            logger.warning(f"Step 5: No matching airport candidates found for country '{country_code}'")
+            logger.warning(
+                f"Step 5: No matching airport candidates found for country '{country_code}'"
+            )
             return None
 
         candidates.sort(reverse=True)
         best_airport = candidates[0][1]
-        logger.info(f"Step 5: Selected best scored airport '{best_airport}' for country '{country_code}'")
+        logger.info(
+            f"Step 5: Selected best scored airport '{best_airport}' for country '{country_code}'"
+        )
         return best_airport
 
     except Exception as e:
@@ -295,7 +325,9 @@ def resolve_location_to_iata(location: str):
         if re.fullmatch(r"[A-Za-z]{3}", raw_location):
             code = raw_location.upper()
             if code in AIRPORTS:
-                logger.info(f"Step 6: Location '{raw_location}' matched direct valid IATA code: '{code}'")
+                logger.info(
+                    f"Step 6: Location '{raw_location}' matched direct valid IATA code: '{code}'"
+                )
                 return code
 
         location_clean = clean_text(raw_location)
@@ -314,7 +346,9 @@ def resolve_location_to_iata(location: str):
         if country_code:
             airport = get_best_airport_for_country(country_code)
             if airport:
-                logger.info(f"Step 6: Resolved country '{location_clean}' ({country_code}) to airport '{airport}'")
+                logger.info(
+                    f"Step 6: Resolved country '{location_clean}' ({country_code}) to airport '{airport}'"
+                )
                 return airport
 
         # Database city matching
@@ -341,10 +375,14 @@ def resolve_location_to_iata(location: str):
         if city_matches:
             city_matches.sort(reverse=True)
             best_match = city_matches[0][1]
-            logger.info(f"Step 6: Resolved '{location_clean}' via airport DB search to '{best_match}'")
+            logger.info(
+                f"Step 6: Resolved '{location_clean}' via airport DB search to '{best_match}'"
+            )
             return best_match
 
-        logger.warning(f"Step 6: Could not resolve location '{raw_location}' to any known IATA code")
+        logger.warning(
+            f"Step 6: Could not resolve location '{raw_location}' to any known IATA code"
+        )
         return None
 
     except Exception as e:
@@ -408,8 +446,14 @@ def parse_route(query: str):
 
         # Global query check
         global_keywords = [
-            "all country", "all countries", "global flight", "global flights",
-            "all flight", "all flights", "worldwide flight", "worldwide flights",
+            "all country",
+            "all countries",
+            "global flight",
+            "global flights",
+            "all flight",
+            "all flights",
+            "worldwide flight",
+            "worldwide flights",
         ]
         if any(keyword in q_lower for keyword in global_keywords):
             logger.info("Step 8: Global flight keywords detected - returning (None, None)")
@@ -583,7 +627,9 @@ def search_flights(query: str, limit: int = 10) -> str:
             params["arr_iata"] = arr_iata
 
         masked_params = {k: (v if k != "access_key" else "***") for k, v in params.items()}
-        logger.info(f"Step 10: Requesting AviationStack API ({BASE_URL}) with params: {masked_params}")
+        logger.info(
+            f"Step 10: Requesting AviationStack API ({BASE_URL}) with params: {masked_params}"
+        )
 
         try:
             response = requests.get(BASE_URL, params=params, timeout=30)
@@ -600,12 +646,10 @@ def search_flights(query: str, limit: int = 10) -> str:
             error = data["error"]
             err_code = error.get("code", "Unknown")
             err_msg = error.get("message", "Unknown error")
-            logger.error(f"Step 10: AviationStack returned an API error: Code={err_code}, Message={err_msg}")
-            return (
-                "Flight API error:\n"
-                f"Code: {err_code}\n"
-                f"Message: {err_msg}"
+            logger.error(
+                f"Step 10: AviationStack returned an API error: Code={err_code}, Message={err_msg}"
             )
+            return f"Flight API error:\nCode: {err_code}\nMessage: {err_msg}"
 
         flight_data = data.get("data", [])
         logger.info(f"Step 10: Retrieved {len(flight_data)} flight entries from API")
