@@ -40,12 +40,12 @@ try:
     groq_api_key = os.getenv(ENV_GROQ_API_KEY)
     if not groq_api_key:
         logger.warning(
-            f"{ENV_GROQ_API_KEY} is missing from environment. Set it in .env for LLM inference."
+            f"{ENV_GROQ_API_KEY} is missing from environment. Using placeholder for initialization."
         )
 
     llm = ChatGroq(
         model=model_cfg.model_name,
-        api_key=groq_api_key,
+        api_key=groq_api_key or "gsk_placeholder_api_key_for_initialization",
         temperature=model_cfg.temperature,
         max_tokens=model_cfg.max_tokens,
         max_retries=model_cfg.max_retries,
