@@ -27,7 +27,7 @@ logging.basicConfig(
 )
 
 # Export standard logger instance
-logger = logging.getLogger("my_project")
+logger = logging.getLogger("TripMeta_AI")
 
 
 def get_logger(name: str = "my_project") -> logging.Logger:
