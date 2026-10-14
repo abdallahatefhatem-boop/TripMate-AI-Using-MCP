@@ -1,6 +1,6 @@
 import sys
 from types import TracebackType
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 
 def error_message_detail(error: Exception | str, error_detail: Optional[Any] = None) -> str:
@@ -24,7 +24,7 @@ def error_message_detail(error: Exception | str, error_detail: Optional[Any] = N
             # إذا تم تمرير tuple الخاصة بـ sys.exc_info()
             elif isinstance(error_detail, tuple) and len(error_detail) == 3:
                 _, _, exc_tb = error_detail
-        
+
         # إذا لم يتم العثور على traceback من error_detail، نحاول الحصول عليه من الحالة الحالية
         if exc_tb is None:
             _, _, exc_tb = sys.exc_info()
