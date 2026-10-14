@@ -8,7 +8,12 @@ def test_configuration_manager_model_config():
 
     assert isinstance(model_cfg, ModelConfig)
     assert model_cfg.provider == "groq"
-    assert model_cfg.model_name in ["qwen/qwen3.8-27b", "openai/gpt-oss-20b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile"]
+    assert model_cfg.model_name in [
+        "qwen/qwen3.8-27b",
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+        "llama-3.3-70b-versatile",
+    ]
     assert model_cfg.temperature == 0.5
 
 

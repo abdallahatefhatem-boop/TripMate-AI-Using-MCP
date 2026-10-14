@@ -36,7 +36,9 @@ async def log_http_requests(request: Request, call_next):
     client_ip = request.client.host if request.client else "unknown"
     logger.info(f"--> Incoming HTTP: {request.method} {request.url.path} from {client_ip}")
     response = await call_next(request)
-    logger.info(f"<-- Outgoing HTTP: {request.method} {request.url.path} -> Status {response.status_code}")
+    logger.info(
+        f"<-- Outgoing HTTP: {request.method} {request.url.path} -> Status {response.status_code}"
+    )
     return response
 
 
@@ -104,10 +106,18 @@ async def plan_trip(request: TravelPlanRequest):
 
         # Explicitly log all agent outputs into app.log so output content is always preserved
         thread_id = result.get("thread_id", "unknown")
-        logger.info(f"=== FLIGHT RESULTS LOGGED (thread: {thread_id}) ===\n{result.get('flight_results', 'None')}")
-        logger.info(f"=== HOTEL RESULTS LOGGED (thread: {thread_id}) ===\n{result.get('hotel_results', 'None')}")
-        logger.info(f"=== FINAL GENERATED TRAVEL DOSSIER (thread: {thread_id}) ===\n{result.get('answer', '')}")
-        logger.info(f"Successfully finished and logged trip planning request for thread '{thread_id}'.")
+        logger.info(
+            f"=== FLIGHT RESULTS LOGGED (thread: {thread_id}) ===\n{result.get('flight_results', 'None')}"
+        )
+        logger.info(
+            f"=== HOTEL RESULTS LOGGED (thread: {thread_id}) ===\n{result.get('hotel_results', 'None')}"
+        )
+        logger.info(
+            f"=== FINAL GENERATED TRAVEL DOSSIER (thread: {thread_id}) ===\n{result.get('answer', '')}"
+        )
+        logger.info(
+            f"Successfully finished and logged trip planning request for thread '{thread_id}'."
+        )
 
         return result
     except Exception as e:

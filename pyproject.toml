@@ -1,5 +1,5 @@
 [project]
-name = "my-venv"
+name = "tripmate-ai"
 version = "0.1.0"
 description = "TripMate AI - Multi-Agent Travel Planner using LangGraph, Groq, Tavily, and AviationStack"
 readme = "README.md"
@@ -60,3 +60,30 @@ ignore = [
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["main"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "agent*",
+    "backend*",
+    "configuration*",
+    "constant*",
+    "entity*",
+    "exception*",
+    "logger*",
+    "tools*",
+]
+exclude = [
+    "tests*",
+    "static*",
+    "templates*",
+    "logs*",
+]
+
