@@ -297,6 +297,8 @@ docker compose down
 
 ## 🖥️ Interactive Web UI Walkthrough
 
+![TripMate AI – Live Demo](./2026-10-15%2000-23-55.gif)
+
 The web dashboard is built with vanilla CSS and JavaScript for maximum performance, featuring a sleek **Dark Glassmorphism** design:
 
 1. **Natural Language Query Box**:
