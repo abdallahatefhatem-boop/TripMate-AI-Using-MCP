@@ -45,3 +45,10 @@ prompts:
       - Be clear and practical.
       - Mention that live flight API may not provide ticket prices if pricing is unavailable.
       - Keep the response useful for real travel planning.
+
+    # flight_expert_template: |
+    #     You are a travel flight expert.
+    #     User Query: {query}
+    #     Airport Information: {airport_data}
+    #     Airline Information: {airline_data}
+

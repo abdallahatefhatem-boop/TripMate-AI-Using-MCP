@@ -2,10 +2,6 @@
 
 <div align="center">
 
-![TripMate AI – Live Demo](./2026-10-15%2000-23-55.gif)
-
-</div>
-
 ---
 
 ## 📑 Table of Contents
@@ -13,16 +9,17 @@
 1. [🌟 Overview & Problem Statement](#-overview--problem-statement)
 2. [🧠 Multi-Agent Architecture (LangGraph Deep Dive)](#-multi-agent-architecture-langgraph-deep-dive)
 3. [🛠️ Tool Implementations Under the Hood](#️-tool-implementations-under-the-hood)
-4. [📐 Project Structure & Enterprise Design Patterns](#-project-structure--enterprise-design-patterns)
-5. [⚙️ Environment Configuration & API Keys](#️-environment-configuration--api-keys)
-6. [🚀 How to Run the Application & Web UI](#-how-to-run-the-application--web-ui)
+4. [🔌 Model Context Protocol (MCP) Integration](#-model-context-protocol-mcp-integration)
+5. [📐 Project Structure & Enterprise Design Patterns](#-project-structure--enterprise-design-patterns)
+6. [⚙️ Environment Configuration & API Keys](#️-environment-configuration--api-keys)
+7. [🚀 How to Run the Application & Web UI](#-how-to-run-the-application--web-ui)
    - [Method 1: Local Virtual Environment (Fastest)](#method-1-local-virtual-environment-fastest)
    - [Method 2: Using the Automation Makefile](#method-2-using-the-automation-makefile)
    - [Method 3: Docker & Docker Compose (Full Stack)](#method-3-docker--docker-compose-full-stack)
-7. [🖥️ Interactive Web UI Walkthrough](#️-interactive-web-ui-walkthrough)
-8. [📡 REST API Documentation](#-rest-api-documentation)
-9. [🧪 Testing, Verification & Code Quality](#-testing-verification--code-quality)
-10. [🛡️ Logging & Exception Diagnostics](#️-logging--exception-diagnostics)
+8. [🖥️ Interactive Web UI Walkthrough](#️-interactive-web-ui-walkthrough)
+9. [📡 REST API Documentation](#-rest-api-documentation)
+10. [🧪 Testing, Verification & Code Quality](#-testing-verification--code-quality)
+11. [🛡️ Logging & Exception Diagnostics](#️-logging--exception-diagnostics)
 
 ---
 
@@ -44,29 +41,6 @@ Planning an international vacation typically involves:
 The system is constructed as a deterministic **StateGraph** state machine. Each node reads from the shared `TravelState`, performs its specialized task, and outputs state updates.
 
 <div align="center">
-
-```mermaid
-flowchart TD
-    START([User Query Input]) --> Node1[🛫 Flight Agent]
-    Node1 -->|Updates: flight_results| Node2[🏨 Hotel Agent]
-    Node2 -->|Updates: hotel_results| Node3[📅 Itinerary Agent]
-    Node3 -->|Updates: itinerary| Node4[📋 Final Agent]
-    Node4 -->|Updates: answer, messages| END([Final Output Dossier])
-
-    subgraph State Machine Engine [LangGraph StateGraph]
-        Node1
-        Node2
-        Node3
-        Node4
-    end
-
-    subgraph Persistence Layer [Checkpointer]
-        DB[(PostgreSQL Database\nPostgresSaver)] -. Thread Session Memory .- State Machine Engine
-        MEM[(InMemorySaver Fallback)] -. Fallback Session Memory .- State Machine Engine
-    end
-```
-
-</div>
 
 ### 1. State Definition (`TravelState`)
 
@@ -111,12 +85,12 @@ travel_graph = workflow.compile(checkpointer=checkpointer)
 
 ### 3. Node Breakdown
 
-| Node Name                     | Handler Function           | Role & Technology                                                                                                                                        |
-| :---------------------------- | :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Node Name                     | Handler Function           | Role & Technology                                                                                                                                         |
+| :---------------------------- | :------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`flight_agent`**    | `flight_agent(state)`    | Parses the query, extracts origin and destination, resolves city/country names to 3-letter IATA codes (e.g. `DAC` -> `NRT`), and calls AviationStack. |
-| **`hotel_agent`**     | `hotel_agent(state)`     | Queries Tavily Search with destination keywords to extract real hotels, locations, ratings, and amenities.                                               |
-| **`itinerary_agent`** | `itinerary_agent(state)` | Ingests the flight telemetry and hotel listings, then prompts Groq (`qwen/qwen3.8-27b`) to construct an optimized day-by-day plan.                     |
-| **`final_agent`**     | `final_agent(state)`     | Assembles the complete executive travel dossier with trip summary, flights, hotel recommendations, budget estimate, and tips.                            |
+| **`hotel_agent`**     | `hotel_agent(state)`     | Queries Tavily Search with destination keywords to extract real hotels, locations, ratings, and amenities.                                                |
+| **`itinerary_agent`** | `itinerary_agent(state)` | Ingests the flight telemetry and hotel listings, then prompts Groq (`qwen/qwen3.8-27b`) to construct an optimized day-by-day plan.                      |
+| **`final_agent`**     | `final_agent(state)`     | Assembles the complete executive travel dossier with trip summary, flights, hotel recommendations, budget estimate, and tips.                             |
 
 ### 4. Checkpointing & State Persistence
 
@@ -153,6 +127,27 @@ Connects to **Tavily AI Search**:
 
 ---
 
+## 🔌 Model Context Protocol (MCP) Integration
+
+TripMate AI has been upgraded with **Model Context Protocol (MCP)** support on top of the original architecture via [`mcp_project/`](./mcp_project/). This decouples tools into standardized, composable micro-servers managed through [`MultiServerMCPClient`](./mcp_project/mcp_client.py) from `langchain-mcp-adapters`, while preserving the legacy direct tool implementations for complete backward compatibility.
+
+### 1. Integrated MCP Servers
+
+| Server Name | Transport | Mechanism & Tools Provided |
+| :--- | :--- | :--- |
+| **`tavily`** | `streamable_http` | Direct HTTP streaming to `https://mcp.tavily.com/mcp/` providing `tavily_search`, `tavily_extract`, `tavily_crawl`, `tavily_map`, `tavily_research`. |
+| **`aviationstack`** | `stdio` | Launched via `uvx aviationstack-mcp` with 13 live aviation tools (`get_flight_status`, `list_airports`, `list_airlines`, `list_routes`, etc.). |
+| **`weather`** | `stdio` | Custom local FastMCP server ([`custom_weather_mcp_server.py`](./mcp_project/custom_weather_mcp_server.py)) calling OpenWeatherMap API for `get_current_weather` and `get_forecast`. |
+
+### 2. Key MCP Features Added
+
+- **Multi-Server Orchestration:** Independent server connections ensure that an outage or rate limit on one server (e.g. weather) does not block hotel search or flight planning.
+- **Output Normalization:** Built-in [`format_mcp_output`](./mcp_project/mcp_client.py) handles raw MCP JSON payloads, converting them into clean markdown snippets formatted directly for LLM prompts.
+- **Full Observability & Diagnostics:** Fully instrumented with the project's centralized [`logger`](./logger/__init__.py) and [`CustomException`](./exception/__init__.py), with timestamped file logging into `logs/`.
+- **Backward Compatibility:** All original non-MCP tools in [`tools/`](./tools/) and previous graph functions remain preserved.
+
+---
+
 ## 📐 Project Structure & Enterprise Design Patterns
 
 The codebase adheres to modular, production-ready design principles:
@@ -177,9 +172,13 @@ my_venv/
 ├── backend/
 │   └── schema/
 │       └── schema.py            # TravelState TypedDict definition
+├── mcp_project/
+│   ├── __init__.py
+│   ├── mcp_client.py            # MultiServerMCPClient manager, tool callers & normalizer
+│   └── custom_weather_mcp_server.py # FastMCP stdio server for live weather & forecast
 ├── tools/
-│   ├── flight_tool.py           # AviationStack live flight query & IATA resolution
-│   └── tavily_tool.py           # Tavily accommodation search tool
+│   ├── flight_tool.py           # AviationStack live flight query & IATA resolution (legacy)
+│   └── tavily_tool.py           # Tavily accommodation search tool (legacy)
 ├── logger/
 │   └── __init__.py              # Dual console & timestamped file logger (logs/*.log)
 ├── exception/
@@ -212,18 +211,22 @@ Create a `.env` file in the root directory:
 # Get a free key at: https://console.groq.com/keys
 GROQ_API_KEY=gsk_your_groq_api_key_here
 
-# 2. Tavily Search API Key (Hotel and web discovery)
+# 2. Tavily Search API Key (Hotel and web discovery / MCP)
 # Get a free key at: https://app.tavily.com/
 TAVILY_API_KEY=tvly-your_tavily_api_key_here
 
-# 3. AviationStack API Key (Live flight telemetry)
+# 3. AviationStack API Key (Live flight telemetry / MCP)
 # Get a free key at: https://aviationstack.com/
 AVIATIONSTACK_API_KEY=your_aviationstack_api_key_here
 
-# 4. Default Departure Airport Code (Optional, default is DAC)
+# 4. OpenWeather API Key (Weather MCP server)
+# Get a free key at: https://openweathermap.org/api
+OPENWEATHER_API_KEY=your_openweather_api_key_here
+
+# 5. Default Departure Airport Code (Optional, default is DAC)
 DEFAULT_ORIGIN_IATA=DAC
 
-# 5. PostgreSQL Database URL (Optional for conversation checkpointing)
+# 6. PostgreSQL Database URL (Optional for conversation checkpointing)
 # Example: postgresql://postgres:postgres@localhost:5432/tripmate
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tripmate
 ```
@@ -239,7 +242,6 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tripmate
    ```bash
    source .venv/bin/activate
    ```
-
 2. **Launch the web server**:
 
    ```bash
@@ -251,7 +253,6 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tripmate
    ```bash
    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
    ```
-
 3. **Open the Web UI**:
    Navigate to: 👉 **[http://localhost:8000](http://localhost:8000)**
 
@@ -314,7 +315,6 @@ The web dashboard is built with vanilla CSS and JavaScript for maximum performan
    - *"5 days vacation in Dubai with luxury hotels from London"*
    - *"Budget 4 days trip to Paris from New York"*
    - Or click any of the **Quick Suggestion Chips** right below the input box.
-
 2. **Real-Time Animated Progress Stepper**:
    During execution, the UI displays an animated stepper that reflects the internal LangGraph state:
 
@@ -322,7 +322,6 @@ The web dashboard is built with vanilla CSS and JavaScript for maximum performan
    - 🏨 *Finding Top Hotels (Tavily)...*
    - 📅 *Synthesizing Daily Itinerary (Qwen 27B)...*
    - 📋 *Finalizing Travel Guide...*
-
 3. **Tabbed Output Dashboard**:
 
    - **✨ Comprehensive Plan**: The complete dossier rendered in GitHub-flavored markdown with day-by-day schedules, highlights, and cost breakdown.
@@ -330,7 +329,6 @@ The web dashboard is built with vanilla CSS and JavaScript for maximum performan
    - **🏨 Hotel Options**: Discovered hotels with links, descriptions, and amenities.
    - **📅 Day-by-Day**: Focused daily itinerary.
    - **⚙️ Agent Metadata**: Technical execution details (Thread ID, total LLM calls, model name, and graph orchestrator).
-
 4. **📋 Copy Plan**: Copies the full markdown output to your clipboard with one click.
 
 ---
@@ -417,7 +415,6 @@ make test
    [2026-10-15 00:00:36,086] INFO [travel_graph.py:86] my_project - [hotel_agent] Hotel search completed successfully.
    [2026-10-15 00:00:51,447] INFO [travel_graph.py:245] my_project - Graph execution complete with 4 calls.
    ```
-
 2. **Zero-Guesswork Exception Tracing**:
    Using `CustomException` from [`exception/__init__.py`](./exception/__init__.py), any runtime error automatically prints the file name and exact line number:
 

@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sys
 import uuid
@@ -24,8 +25,11 @@ from constant import ENV_GROQ_API_KEY
 from entity import TravelAgentOutput
 from exception import CustomException
 from logger import logger
-from tools.flight_tool import search_flights
-from tools.tavily_tool import tavily_search
+
+# from tools.flight_tool import search_flights
+# from tools.tavily_tool import tavily_search
+# from mcp_project.mcp_client_test import tavily_mcp_search
+from mcp_project.mcp_client import aviation_mcp_call, tavily_mcp_search
 
 # =====================================================================
 # Configuration & LLM Initialization
@@ -62,21 +66,81 @@ except Exception as e:
 # =====================================================================
 # Node 1: Flight Agent
 # =====================================================================
-def flight_agent(state: TravelState) -> dict:
-    try:
-        query = state["user_query"]
-        logger.info(f"[flight_agent] Searching flights for user query: '{query}'")
-        flight_data = search_flights(query)
-        logger.info("[flight_agent] Flight search completed successfully.")
+# def flight_agent(state: TravelState) -> dict:
+#     try:
+#         query = state["user_query"]
+#         logger.info(f"[flight_agent] Searching flights for user query: '{query}'")
+#         flight_data = search_flights(query)
+#         logger.info("[flight_agent] Flight search completed successfully.")
 
-        return {
-            "flight_results": flight_data,
-            "messages": [AIMessage(content="Flight results fetched.")],
-            "llm_calls": state.get("llm_calls", 0) + 1,
-        }
+#         return {
+#             "flight_results": flight_data,
+#             "messages": [AIMessage(content="Flight results fetched.")],
+#             "llm_calls": state.get("llm_calls", 0) + 1,
+#         }
+#     except Exception as e:
+#         logger.error(f"[flight_agent] Error in flight_agent: {e}")
+#         raise CustomException(e, sys)
+
+FLIGHT_AGENT_PROMPT = """You are a travel flight expert.
+
+User Query:
+{query}
+
+Airport Information:
+{airport_data}
+
+Airline Information:
+{airline_data}
+
+Generate:
+1. Likely departure airport
+2. Likely arrival airport
+3. Airlines serving this route
+4. Typical flight duration
+5. Estimated airfare range
+6. Peak season pricing warning
+7. Booking advice
+
+Return concise travel guidance.
+"""
+
+
+# Flight Agent
+def flight_agent(state: TravelState):
+    print("\nINSIDE FLIGHT AGENT\n")
+
+    query = state["user_query"]
+
+    try:
+        airports = asyncio.run(aviation_mcp_call("list_airports"))
+
+        airlines = asyncio.run(aviation_mcp_call("list_airlines"))
+
+        print("\nAIRPORTS:", airports)
+        print("\nAIRLINES:", airlines)
+
+        prompt = FLIGHT_AGENT_PROMPT.format(
+            query=query, airport_data=str(airports)[:3000], airline_data=str(airlines)[:3000]
+        )
+
+        response = llm.invoke(
+            [
+                SystemMessage(content="You are an expert travel flight planner."),
+                HumanMessage(content=prompt),
+            ]
+        )
+
+        flight_data = response.content
+
     except Exception as e:
-        logger.error(f"[flight_agent] Error in flight_agent: {e}")
-        raise CustomException(e, sys)
+        flight_data = f"Flight information unavailable: {str(e)}"
+
+    return {
+        "flight_results": flight_data,
+        "messages": [AIMessage(content="Flight recommendations generated")],
+        "llm_calls": state.get("llm_calls", 0) + 1,
+    }
 
 
 # =====================================================================
@@ -86,7 +150,8 @@ def hotel_agent(state: TravelState) -> dict:
     try:
         hotel_query = f"Best hotels for {state['user_query']}"
         logger.info(f"[hotel_agent] Searching hotels with query: '{hotel_query}'")
-        hotel_results = tavily_search(hotel_query)
+        # hotel_results = tavily_search(hotel_query)
+        hotel_results = asyncio.run(tavily_mcp_search(query=hotel_query))
         logger.info("[hotel_agent] Hotel search completed successfully.")
 
         return {

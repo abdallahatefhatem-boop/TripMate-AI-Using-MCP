@@ -40,5 +40,6 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY || 'gsk_mock_test_key_for_ci_pipeline' }}
           AVIATIONSTACK_API_KEY: ${{ secrets.AVIATIONSTACK_API_KEY || 'mock_aviationstack_key' }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY || 'tvly_mock_key' }}
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY || 'mock_openweather_key' }}
         run: |
           pytest -v tests/

@@ -2,6 +2,8 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+# Becuas there is nested asyncio
+import nest_asyncio
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -12,6 +14,8 @@ from pydantic import BaseModel
 from agent import run_travel_agent
 from exception import CustomException
 from logger import logger
+
+nest_asyncio.apply()
 
 # Initialize FastAPI application
 app = FastAPI(
